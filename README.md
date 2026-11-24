@@ -5,6 +5,9 @@ moviéndose en tiempo real, cuánto tarda la próxima en llegar a tu parada y qu
 un destino. Las unidades están **simuladas** en el navegador; el trazo de las rutas sí sigue calles
 reales de OpenStreetMap.
 
+**Demo en línea (con GPS):** <https://edtake.github.io/ruta-plata-taxco/> — se publica solo con cada
+`git push` a `main` (GitHub Pages). Ábrelo en el celular y acepta el permiso de ubicación.
+
 ## Cómo correrlo
 
 ```powershell

@@ -19,27 +19,27 @@ KML_NS = {"k": "http://www.opengis.net/kml/2.2"}
 # Paradas definidas a mano (para rutas sin KML o para compartir entre rutas).
 STOPS = {}
 
-# Nombre corto para los puntos del KML. La llave es lo que va antes de la primera coma en el
+# Nombres con los que se conoce cada parada en Taxco (confirmados nov 2026) para los puntos del KML. La llave es lo que va antes de la primera coma en el
 # nombre del punto (Google Maps pone la dirección). Si un punto no está aquí, se usa esa dirección.
 # El id "zocalo" importa: define la tarifa de $11.00.
 NOMBRES_KML = {
-    "Iguala - Taxco 501":         ("sanmiguel",       "San Miguel · Terminal (Plateros 501)"),
-    "De Los Plateros 501":        ("plateros-501",    "Plateros, San Miguel"),
-    "De Los Plateros 203b":       ("plateros-mora",   "Plateros, Barrio de Mora"),
-    "De Los Plateros 280":        ("plateros-catarina-sur", "Plateros, La Catarina (sur)"),
-    "De Los Plateros 123":        ("plateros-fundiciones", "Plateros, Fundiciones"),
+    "Iguala - Taxco 501":         ("sanmiguel",       "Seguro IMSS · Terminal"),
+    "De Los Plateros 501":        ("plateros-501",    "Telmex"),
+    "De Los Plateros 203b":       ("plateros-mora",   "La Terminal"),
+    "De Los Plateros 280":        ("plateros-catarina-sur", "Comex"),
+    "De Los Plateros 123":        ("plateros-fundiciones", "Reforma"),
     "FAD plateros":               ("fad-plateros",    "FAD Plateros"),
-    "Elektra":                    ("elektra-plateros", "Elektra (Plateros)"),
-    "De Los Plateros 131":        ("plateros-catarina-norte", "Plateros, La Catarina (norte)"),
-    "Monumento al Minero":        ("minero",          "Monumento al Minero"),
-    "C. Benito Juárez 63":        ("juarez-chavarrieta", "Calle Juárez, Chavarrieta"),
-    "Cjón de las Palomas 29":     ("palomas",         "Callejón de las Palomas"),
-    "De Altillo 2":               ("altillo",         "Calle del Altillo"),
-    "C. Benito Juárez 7":         ("juarez-centro",   "Calle Juárez, Centro"),
-    "Agustín de Tolsa 4":         ("zocalo",          "Zócalo / Plaza Borda"),
-    "Carlos J. Nibbi 13":         ("nibbi",           "Calle Carlos J. Nibbi"),
-    "C. de Tetitlán 22":          ("tetitlan",        "Calle Tetitlán"),
-    "De J. M. Morelos y Pavón 4": ("morelos-sanmiguel", "Calle Morelos, San Miguel"),
+    "Elektra":                    ("elektra-plateros", "Elektra"),
+    "De Los Plateros 131":        ("plateros-catarina-norte", "La Misión"),
+    "Monumento al Minero":        ("minero",          "La Garita"),
+    "C. Benito Juárez 63":        ("juarez-chavarrieta", "Chavarrieta 1"),
+    "Cjón de las Palomas 29":     ("palomas",         "Chavarrieta 2"),
+    "De Altillo 2":               ("altillo",         "Ex Convento"),
+    "C. Benito Juárez 7":         ("juarez-centro",   "Castillos"),
+    "Agustín de Tolsa 4":         ("zocalo",          "Zócalo"),
+    "Carlos J. Nibbi 13":         ("nibbi",           "Plazuela"),
+    "C. de Tetitlán 22":          ("tetitlan",        "Parque"),
+    "De J. M. Morelos y Pavón 4": ("morelos-sanmiguel", "San Miguel"),
 }
 
 # Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
@@ -58,7 +58,7 @@ def tarifa(r, stops):
 
 
 ROUTES = [
-    {"id": "ZOC", "name": "Ruta Zocalera · San Miguel – Zócalo", "short": "Z", "chip": "Zocalera", "color": "#1267ff",
+    {"id": "ZOC", "name": "Ruta Zocalera · Seguro IMSS – Zócalo", "short": "Z", "chip": "Zocalera", "color": "#1267ff",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_zocalera.kml", "circuito": True,
      "units": 4, "units_pending": True},
 ]

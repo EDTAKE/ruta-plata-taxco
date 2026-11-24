@@ -40,9 +40,11 @@ arrastrable. El GPS real se usa a cualquier distancia; fuera de Taxco aparece un
   listas `STOPS` y `ROUTES` y vuelve a correr `python tools/build_routes.py`.
 - `manifest.json`, `icon.svg` — para "Agregar a pantalla de inicio".
 
-> ⚠️ Rutas, paradas, tarifas ($12 urbana, $14 Tehuilotepec, $22 Taxco el Viejo) y frecuencias son
-> **ilustrativas**. Antes de piloto hay que levantarlas con los concesionarios / Dirección de
-> Transporte del municipio (idealmente en formato GTFS).
+**Tarifas urbanas confirmadas:** $11.00 en rutas que llegan al Zócalo y $11.50 en cualquier otra ruta
+dentro de la ciudad (`TARIFA_ZOCALO` / `TARIFA_URBANA` en `tools/build_routes.py`).
+
+> ⚠️ Recorridos, paradas, frecuencias y tarifas foráneas ($14 Tehuilotepec, $22 Taxco el Viejo) siguen
+> siendo **ilustrativos**. Para cargar las rutas reales usa [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
 
 ## Camino a una versión real
 

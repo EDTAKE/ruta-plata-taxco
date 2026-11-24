@@ -30,6 +30,7 @@ function bearing(a, b) {
   return (Math.atan2(y, x) / toR + 360) % 360;
 }
 const fmtMin = s => s < 45 ? 'llegando' : `${Math.round(s / 60)} min`;
+const fmtFare = r => `$${r.fare.toFixed(2)} MXN${r.fare_pending ? ' (por confirmar)' : ''}`;
 const fmtDist = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
 
 /* ---------------- modelo de rutas ---------------- */
@@ -364,14 +365,14 @@ function renderRoutes() {
     return `<div class="card">
       <div class="route-row"><span class="badge" style="background:${r.color}">${esc(r.short)}</span>
         <div class="info"><strong>${esc(r.name)}</strong><div class="muted">
-          $${r.fare} MXN · cada ~${freq} min · ${n} unidades · ${(r.L / 2000).toFixed(1)} km por sentido</div></div></div>
+          ${fmtFare(r)} · cada ~${freq} min · ${n} unidades · ${(r.L / 2000).toFixed(1)} km por sentido</div></div></div>
       <details><summary class="link-btn">Paradas (${r.stops.length})</summary>
         <ol class="stops-line" style="--c:${r.color}">${r.stops.map(id => `<li>${esc(DATA.stops[id].name)}</li>`).join('')}</ol>
       </details>
       <div class="row"><button class="link-btn" data-fit="${r.id}">Ver ruta</button>
         <button class="link-btn" data-toggle="${r.id}">${r.visible ? 'Ocultar' : 'Mostrar'}</button></div>
     </div>`;
-  }).join('') + `<p class="muted small">Rutas, paradas y tarifas ilustrativas para el prototipo; deben validarse con los concesionarios y la Dirección de Transporte.</p>`;
+  }).join('') + `<p class="muted small">Tarifas urbanas: $11.00 en rutas que llegan al Zócalo y $11.50 en las demás. Recorridos, paradas y tarifas foráneas aún son ilustrativos.</p>`;
 }
 document.addEventListener('click', e => {
   const f = e.target.closest('[data-fit]');
@@ -456,7 +457,7 @@ function renderPlan(redraw) {
       <ol class="steps">
         <li><span class="ico">🚶</span><span>Camina ${Math.max(1, Math.round(o.walk1 / WALK_M_PER_MIN))} min a <b>${esc(DATA.stops[o.bv.stopId].name)}</b></span></li>
         <li><span class="ico">⏱️</span><span>La unidad <b>${esc(o.unit.id)}</b> pasa en <b>${fmtMin(o.waitS)}</b>${o.waitS < (o.walk1 / WALK_M_PER_MIN) * 60 ? ' (¡apúrate!)' : ''}</span></li>
-        <li><span class="ico">🚐</span><span>Viaja ${o.nStops + 1} parada${o.nStops ? 's' : ''} (${fmtDist(o.rideM)}, ~${Math.round(o.rideS / 60)} min) · <b>$${o.r.fare}</b></span></li>
+        <li><span class="ico">🚐</span><span>Viaja ${o.nStops + 1} parada${o.nStops ? 's' : ''} (${fmtDist(o.rideM)}, ~${Math.round(o.rideS / 60)} min) · <b>${fmtFare(o.r)}</b></span></li>
         <li><span class="ico">🏁</span><span>Baja en <b>${esc(DATA.stops[o.av.stopId].name)}</b>${o.walk2 > 60 ? ` y camina ${Math.round(o.walk2 / WALK_M_PER_MIN)} min` : ''}</span></li>
       </ol>
       <div class="row" style="margin-top:8px"><button class="btn" data-follow="${esc(o.unit.id)}" data-stop="${esc(o.bv.stopId)}" data-visit="${o.bv.k}">Avisarme cuando llegue</button></div>

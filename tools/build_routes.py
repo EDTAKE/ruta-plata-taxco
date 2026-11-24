@@ -28,17 +28,30 @@ STOPS = {
     "tviejo":     ("Taxco el Viejo (UAGro)",       18.47617, -99.58052),
 }
 
+# Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
+# ruta dentro de la ciudad. Las foráneas llevan su propia tarifa ("fare"); mientras no esté confirmada,
+# "fare_pending": True la marca en la app como "por confirmar".
+TARIFA_ZOCALO = 11.00
+TARIFA_URBANA = 11.50
+
+
+def tarifa(r):
+    if r["tipo"] == "foranea":
+        return r["fare"]
+    return TARIFA_ZOCALO if "zocalo" in r["stops"] else TARIFA_URBANA
+
+
 ROUTES = [
     {"id": "R1", "name": "Ruta 1 · Los Arcos – Estrella de Oro", "short": "1", "color": "#2563eb",
-     "fare": 12, "headway_min": 6, "units": 5, "stops": ["arcos", "platn", "garita", "eblanca", "martelas", "eoro", "plats"]},
+     "tipo": "urbana", "headway_min": 6, "units": 5, "stops": ["arcos", "platn", "garita", "eblanca", "martelas", "eoro", "plats"]},
     {"id": "R2", "name": "Ruta 2 · Centro – Panorámica – Cristo", "short": "2", "color": "#16a34a",
-     "fare": 12, "headway_min": 10, "units": 3, "stops": ["eblanca", "mercado", "guadalupe", "panoramica", "llano", "cristo"]},
+     "tipo": "urbana", "headway_min": 10, "units": 3, "stops": ["eblanca", "mercado", "guadalupe", "panoramica", "llano", "cristo"]},
     {"id": "R3", "name": "Ruta 3 · Los Arcos – Chorrillo – Zócalo", "short": "3", "color": "#dc2626",
-     "fare": 12, "headway_min": 8, "units": 4, "stops": ["arcos", "cepe", "garita", "juarez", "zocalo", "eblanca"]},
+     "tipo": "urbana", "headway_min": 8, "units": 4, "stops": ["arcos", "cepe", "garita", "juarez", "zocalo", "eblanca"]},
     {"id": "R4", "name": "Ruta 4 · Bermeja – Tehuilotepec", "short": "4", "color": "#9333ea",
-     "fare": 14, "headway_min": 15, "units": 2, "stops": ["eblanca", "bermeja", "libramiento", "tehui"]},
+     "tipo": "foranea", "fare": 14, "fare_pending": True, "headway_min": 15, "units": 2, "stops": ["eblanca", "bermeja", "libramiento", "tehui"]},
     {"id": "S1", "name": "Suburbana · Taxco – Taxco el Viejo", "short": "S", "color": "#ea580c",
-     "fare": 22, "headway_min": 20, "units": 3, "stops": ["eoro", "plats", "tviejo"]},
+     "tipo": "foranea", "fare": 22, "fare_pending": True, "headway_min": 20, "units": 3, "stops": ["eoro", "plats", "tviejo"]},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -67,7 +80,7 @@ def main():
         for leg in route["legs"]:
             cum += leg["distance"]
             stop_pos.append(round(cum, 1))
-        out_routes.append({**r, "sequence": seq, "stop_m": stop_pos,
+        out_routes.append({**r, "fare": tarifa(r), "sequence": seq, "stop_m": stop_pos,
                            "length_m": round(route["distance"], 1),
                            "osrm_s": round(route["duration"]), "path": geom})
         print(f"{r['id']}: {route['distance']/1000:.1f} km ida+vuelta, {len(geom)} puntos")

@@ -10,7 +10,7 @@ Dos tipos de ruta:
 
 Uso:  python tools/build_routes.py
 """
-import json, math, re, time, unicodedata, urllib.request, pathlib
+import hashlib, json, math, re, time, unicodedata, urllib.request, pathlib
 import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -60,7 +60,7 @@ def tarifa(r, stops):
 ROUTES = [
     {"id": "ZOC", "name": "Ruta Zocalera · Seguro IMSS – Zócalo", "short": "Z", "chip": "Zocalera", "color": "#1267ff",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_zocalera.kml", "circuito": True,
-     "units": 4, "units_pending": True},
+     "units": 10},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -196,6 +196,17 @@ def main():
     dst.write_text("// Generado por tools/build_routes.py — no editar a mano\nwindow.TAXCO_DATA = "
                    + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
     print("OK ->", dst)
+    stamp_index()
+
+
+def stamp_index():
+    """Agrega ?v=<huella> a los archivos que carga index.html; cambia sólo si cambia el archivo."""
+    idx = ROOT / "index.html"
+    html = idx.read_text(encoding="utf-8")
+    for f in ("styles.css", "data/routes.js", "app.js"):
+        v = hashlib.sha1((ROOT / f).read_bytes()).hexdigest()[:8]
+        html = re.sub(rf'"{re.escape(f)}(\?v=\w+)?"', f'"{f}?v={v}"', html)
+    idx.write_text(html, encoding="utf-8")
 
 
 if __name__ == "__main__":

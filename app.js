@@ -367,7 +367,7 @@ function renderRoutes() {
     return `<div class="card">
       <div class="route-row"><span class="badge" style="background:${r.color}">${esc(r.short)}</span>
         <div class="info"><strong>${esc(r.name)}</strong>
-          <span class="tag ${r.confirmada ? 'tag-ok' : ''}">${r.confirmada ? 'Recorrido confirmado' : 'Ejemplo'}</span>
+          ${r.confirmada ? '<span class="tag tag-ok">Recorrido confirmado</span>' : ''}
           <div class="muted">${fmtFare(r)} · cada ~${freq} min${r.units_pending ? ' (estimado)' : ''} · ${n} unidades · ${km}${r.circuito ? ' · circuito de un sentido' : ''}</div></div></div>
       <details><summary class="link-btn">Paradas (${r.stops.length})</summary>
         <ol class="stops-line" style="--c:${r.color}">${r.stops.map(id => `<li>${esc(DATA.stops[id].name)}</li>`).join('')}</ol>

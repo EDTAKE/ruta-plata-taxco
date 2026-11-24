@@ -45,7 +45,7 @@ dentro de la ciudad (`TARIFA_ZOCALO` / `TARIFA_URBANA` en `tools/build_routes.py
 
 **Rutas cargadas:** Ruta Zocalera (circuito Seguro IMSS – Zócalo, 3.3 km y 17 paradas, de `rutas/ruta_zocalera.kml`).
 Las rutas de ejemplo se quitaron; las siguientes se agregan con [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
-Unidades y frecuencias todavía son estimadas.
+Ruta Zocalera: 10 unidades en servicio.
 
 ## Camino a una versión real
 

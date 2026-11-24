@@ -375,7 +375,7 @@ function renderRoutes() {
       <div class="row"><button class="link-btn" data-fit="${r.id}">Ver ruta</button>
         <button class="link-btn" data-toggle="${r.id}">${r.visible ? 'Ocultar' : 'Mostrar'}</button></div>
     </div>`;
-  }).join('') + `<p class="muted small">Tarifas urbanas: $11.00 en rutas que llegan al Zócalo y $11.50 en las demás. Las rutas marcadas «Ejemplo» todavía no son recorridos reales.</p>`;
+  }).join('') + `<p class="muted small">Tarifas urbanas: $11.00 en rutas que llegan al Zócalo y $11.50 en las demás. Iremos agregando más rutas conforme se confirmen sus recorridos.</p>`;
 }
 document.addEventListener('click', e => {
   const f = e.target.closest('[data-fit]');
@@ -451,7 +451,8 @@ function renderPlan(redraw) {
   planOptions = opts;
   const walkMin = Math.round((direct * 1.3) / WALK_M_PER_MIN);
   let html = '';
-  if (!opts.length) html += `<div class="card"><strong>No hay una ruta directa cerca.</strong><p class="muted">Prueba acercar tu ubicación a una parada o activa más rutas. (Transbordos: siguiente versión.)</p></div>`;
+  if (!opts.length && walkMin <= 25) html += `<div class="card"><strong>🚶 Caminando llegas en ~${walkMin} min.</strong><p class="muted">Está cerca: ninguna ruta te ahorra tiempo.</p></div>`;
+  else if (!opts.length) html += `<div class="card"><strong>No hay una ruta directa cerca.</strong><p class="muted">Prueba acercar tu ubicación a una parada o activa más rutas. (Transbordos: siguiente versión.)</p></div>`;
   opts.forEach((o, i) => {
     const mins = Math.round(o.total / 60);
     html += `<div class="card click ${i === selectedPlan ? 'selected' : ''}" data-plan="${i}">
@@ -618,8 +619,7 @@ setInterval(tick, 500);
 
 renderChips(); fillDest(); renderNotice(); renderActive(true);
 // encuadre inicial: la mancha urbana (sin localidades foráneas)
-const fitTown = () => map.fitBounds(L.latLngBounds(['arcos', 'plats', 'cristo', 'bermeja', 'libramiento']
-  .map(id => [DATA.stops[id].lat, DATA.stops[id].lon])), { ...fitPad(), maxZoom: 16 });
+const fitTown = () => map.fitBounds(L.latLngBounds(routes.flatMap(r => r.path)), { ...fitPad(), maxZoom: 17 });
 // si la página carga oculta o sin tamaño (pestaña en segundo plano), encuadra cuando ya mida algo
 if (map.getSize().x > 100) fitTown(); else { const once = () => { if (map.getSize().x > 100) { fitTown(); window.removeEventListener('resize', once); } }; window.addEventListener('resize', once); }
 })();

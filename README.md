@@ -24,7 +24,7 @@ p. ej. GitHub Pages o Netlify).
 |---|---|
 | **Cerca de mí** | Las 4 paradas más cercanas, minutos caminando y próximas llegadas por ruta y sentido. |
 | **¿A dónde vas?** | Planificador: dónde subir, qué unidad pasa y en cuánto, paradas, tarifa y tiempo total. Avisa si caminando llegas antes. |
-| **Rutas** | Las 5 rutas con tarifa, frecuencia, unidades, km y lista de paradas; mostrar/ocultar en el mapa. |
+| **Rutas** | Rutas confirmadas con tarifa, frecuencia, unidades, km y lista de paradas; mostrar/ocultar en el mapa. |
 | **Conductor** | Cómo sería la app del chofer: comparte GPS cada 5 s, controla ocupación, reporta incidentes y muestra el paquete JSON que se enviaría al servidor. |
 | **Seguir unidad** | Tarjeta flotante con ETA en vivo y alerta (toast + vibración) cuando falta < 2 min. |
 
@@ -43,8 +43,9 @@ arrastrable. El GPS real se usa a cualquier distancia; fuera de Taxco aparece un
 **Tarifas urbanas confirmadas:** $11.00 en rutas que llegan al Zócalo y $11.50 en cualquier otra ruta
 dentro de la ciudad (`TARIFA_ZOCALO` / `TARIFA_URBANA` en `tools/build_routes.py`).
 
-> ⚠️ Recorridos, paradas, frecuencias y tarifas foráneas ($14 Tehuilotepec, $22 Taxco el Viejo) siguen
-> siendo **ilustrativos**. Para cargar las rutas reales usa [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
+**Rutas cargadas:** Ruta Zocalera (circuito San Miguel – Zócalo, trazo de `rutas/ruta_zocalera.kml`).
+Las rutas de ejemplo se quitaron; las siguientes se agregan con [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
+Unidades y frecuencias todavía son estimadas.
 
 ## Camino a una versión real
 

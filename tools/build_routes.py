@@ -3,7 +3,8 @@
 Dos tipos de ruta:
 - Confirmadas ("kml"): el trazo sale tal cual del KML/My Maps que dibujó quien conoce la ruta
   (carpeta rutas/). Si es un circuito de un solo sentido, se recorre en el orden en que se dibujó.
-- De ejemplo (sin "kml"): ida y vuelta por la misma lista de paradas, trazada sobre calles con OSRM.
+- Sin "kml": ida y vuelta por la misma lista de paradas, trazada sobre calles con OSRM
+  (útil cuando la ruta llega descrita por texto y aún no hay trazo dibujado).
 
 Uso:  python tools/build_routes.py
 """
@@ -13,28 +14,8 @@ import xml.etree.ElementTree as ET
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 STOPS = {
-    # --- confirmadas ---
     "sanmiguel":  ("Barrio de San Miguel (Plateros 501)", 18.55365, -99.60253),
     "zocalo":     ("Zócalo / Plaza Borda",         18.55658, -99.60548),
-    # --- de ejemplo ---
-    "arcos":      ("Los Arcos",                    18.56840, -99.60343),
-    "cepe":       ("Teleférico / CEPE UNAM",        18.56740, -99.60538),
-    "platn":      ("Av. de los Plateros Norte",    18.56538, -99.60388),
-    "garita":     ("La Garita",                    18.56116, -99.60269),
-    "juarez":     ("Calle Benito Juárez",          18.55926, -99.60286),
-    "eblanca":    ("Terminal Estrella Blanca",     18.55578, -99.60228),
-    "martelas":   ("Las Martelas (IMSS)",          18.55331, -99.60190),
-    "bermeja":    ("Bermeja",                      18.55284, -99.60042),
-    "eoro":       ("Terminal Estrella de Oro",     18.55355, -99.60616),
-    "plats":      ("Av. de los Plateros Sur",      18.54767, -99.61189),
-    "mercado":    ("Mercado Tetitlán",             18.55547, -99.60563),
-    "guadalupe":  ("Templo de Guadalupe",          18.55865, -99.60681),
-    "panoramica": ("La Panorámica",                18.55982, -99.60826),
-    "llano":      ("Deportiva El Llano",           18.56223, -99.60959),
-    "cristo":     ("Cristo Monumental (Atachi)",   18.56088, -99.61013),
-    "libramiento":("Libramiento de Taxco",         18.56420, -99.59439),
-    "tehui":      ("Tehuilotepec",                 18.55278, -99.57889),
-    "tviejo":     ("Taxco el Viejo (UAGro)",       18.47617, -99.58052),
 }
 
 # Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
@@ -55,16 +36,6 @@ ROUTES = [
     {"id": "ZOC", "name": "Ruta Zocalera · San Miguel – Zócalo", "short": "Z", "chip": "Zocalera", "color": "#1267ff",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_zocalera.kml", "circuito": True,
      "units": 4, "units_pending": True, "stops": ["sanmiguel", "zocalo"]},
-    {"id": "R1", "name": "Ruta 1 · Los Arcos – Estrella de Oro", "short": "1", "color": "#0891b2",
-     "tipo": "urbana", "units": 5, "stops": ["arcos", "platn", "garita", "eblanca", "martelas", "eoro", "plats"]},
-    {"id": "R2", "name": "Ruta 2 · Centro – Panorámica – Cristo", "short": "2", "color": "#16a34a",
-     "tipo": "urbana", "units": 3, "stops": ["eblanca", "mercado", "guadalupe", "panoramica", "llano", "cristo"]},
-    {"id": "R3", "name": "Ruta 3 · Los Arcos – Chorrillo – Zócalo", "short": "3", "color": "#dc2626",
-     "tipo": "urbana", "units": 4, "stops": ["arcos", "cepe", "garita", "juarez", "zocalo", "eblanca"]},
-    {"id": "R4", "name": "Ruta 4 · Bermeja – Tehuilotepec", "short": "4", "color": "#9333ea",
-     "tipo": "foranea", "fare": 14, "fare_pending": True, "units": 2, "stops": ["eblanca", "bermeja", "libramiento", "tehui"]},
-    {"id": "S1", "name": "Suburbana · Taxco – Taxco el Viejo", "short": "S", "color": "#ea580c",
-     "tipo": "foranea", "fare": 22, "fare_pending": True, "units": 3, "stops": ["eoro", "plats", "tviejo"]},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"

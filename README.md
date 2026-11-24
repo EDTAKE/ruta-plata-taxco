@@ -43,9 +43,11 @@ arrastrable. El GPS real se usa a cualquier distancia; fuera de Taxco aparece un
 **Tarifas urbanas confirmadas:** $11.00 en rutas que llegan al Zócalo y $11.50 en cualquier otra ruta
 dentro de la ciudad (`TARIFA_ZOCALO` / `TARIFA_URBANA` en `tools/build_routes.py`).
 
-**Rutas cargadas:** Ruta Zocalera (circuito Seguro IMSS – Zócalo, 3.3 km y 17 paradas, de `rutas/ruta_zocalera.kml`).
+**Rutas cargadas:**
+- Ruta Zocalera: circuito Seguro IMSS – Zócalo, 3.3 km, 17 paradas, 10 unidades (`rutas/ruta_zocalera.kml`).
+- Ruta Plazuela – CBTIS: circuito Plazuela – Campamento/CBTIS, 4.0 km, 16 paradas, unidades por confirmar
+  (`rutas/ruta_plazuela_cbtis.kml`; la ida y la vuelta vienen en capas separadas).
 Las rutas de ejemplo se quitaron; las siguientes se agregan con [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
-Ruta Zocalera: 10 unidades en servicio.
 
 ## Camino a una versión real
 

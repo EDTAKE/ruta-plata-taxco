@@ -52,6 +52,15 @@ const routes = DATA.routes.map(r => {
 });
 const routeById = Object.fromEntries(routes.map(r => [r.id, r]));
 
+/** Nombre de la parada; si otra parada se llama igual (p. ej. dos "Telmex"), agrega qué rutas pasan */
+const nameCount = {};
+Object.values(DATA.stops).forEach(s => { nameCount[s.name] = (nameCount[s.name] || 0) + 1; });
+function stopLabel(id) {
+  const name = DATA.stops[id].name;
+  if (nameCount[name] < 2) return name;
+  return `${name} (${routes.filter(r => r.stops.includes(id)).map(r => r.chip || r.short).join(', ')})`;
+}
+
 function pointAt(route, d) {
   const { cum, path, L } = route;
   d = ((d % L) + L) % L;
@@ -283,7 +292,7 @@ function stopPopup(id) {
   const s = DATA.stops[id];
   const el = document.createElement('div');
   el.className = 'pop';
-  el.innerHTML = `<h4>🚏 ${esc(s.name)}</h4><p>A ${fmtDist(haversine(me.latlng, [s.lat, s.lon]))} de ti</p>${arrivalsListHTML(id)}`;
+  el.innerHTML = `<h4>🚏 ${esc(stopLabel(id))}</h4><p>A ${fmtDist(haversine(me.latlng, [s.lat, s.lon]))} de ti</p>${arrivalsListHTML(id)}`;
   return bindFollow(el);
 }
 function unitPopup(u) {
@@ -343,7 +352,7 @@ function renderNear() {
     .sort((a, b) => a.d - b.d).slice(0, 4);
   $('#tab-near').innerHTML = `<h3 class="section">Paradas más cercanas</h3>` + near.map(({ id, d }) => `
     <div class="card">
-      <div class="card-head"><strong>🚏 ${esc(DATA.stops[id].name)}</strong>
+      <div class="card-head"><strong>🚏 ${esc(stopLabel(id))}</strong>
         <span class="muted">${d > 3000 ? fmtDist(d) : `🚶 ${Math.max(1, Math.round(d / WALK_M_PER_MIN))} min · ${fmtDist(d)}`}</span></div>
       ${arrivalsListHTML(id)}
       <button class="link-btn" data-goto="${esc(id)}">Ver en el mapa</button>
@@ -406,8 +415,8 @@ let planOptions = [], selectedPlan = 0;
 function fillDest() {
   const sel = $('#destSelect');
   sel.innerHTML = '<option value="">Elige un destino…</option>' + Object.keys(stopMarkers)
-    .sort((a, b) => DATA.stops[a].name.localeCompare(DATA.stops[b].name, 'es'))
-    .map(id => `<option value="${id}">${esc(DATA.stops[id].name)}</option>`).join('');
+    .sort((a, b) => stopLabel(a).localeCompare(stopLabel(b), 'es'))
+    .map(id => `<option value="${id}">${esc(stopLabel(id))}</option>`).join('');
   sel.onchange = () => { selectedPlan = 0; renderPlan(true); };
 }
 

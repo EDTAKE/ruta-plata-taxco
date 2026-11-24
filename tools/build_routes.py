@@ -37,9 +37,21 @@ NOMBRES_KML = {
     "De Altillo 2":               ("altillo",         "Ex Convento"),
     "C. Benito Juárez 7":         ("juarez-centro",   "Castillos"),
     "Agustín de Tolsa 4":         ("zocalo",          "Zócalo"),
+    "Agustín de Tolsa 7":         ("zocalo",          "Zócalo"),   # a 16 m del anterior
     "Carlos J. Nibbi 13":         ("nibbi",           "Plazuela"),
     "C. de Tetitlán 22":          ("tetitlan",        "Parque"),
     "De J. M. Morelos y Pavón 4": ("morelos-sanmiguel", "San Miguel"),
+    # Ruta Plazuela – CBTIS (ida y vuelta comparten las de Nibbi 76 y Loma del Santito)
+    "Carlos J. Nibbi 53":         ("paris",           "Paris"),
+    "Carlos J. Nibbi 81":         ("taller-lugo",     "Taller Lugo"),
+    "Carlos J. Nibbi 76":         ("nibbi-20-nov",    "20 de Noviembre"),
+    "Loma del Santito 120":       ("la-cadena",       "La Cadena"),
+    "Loma del Santito 160":       ("telmex-santito",  "Telmex"),
+    "Loma del Santito 182":       ("montana-de-plata", "Montaña de Plata"),
+    "H92J+JC":                    ("cbtis",           "Campamento - CBTIS"),
+    "20 de Noviembre 21":         ("primaria-20-nov", "Primaria 20 de Noviembre"),
+    "Tlachichilpan 10":           ("ojeda-1",         "Ojeda 1"),
+    "Del Progreso 25":            ("ojeda-2",         "Ojeda 2"),
 }
 
 # Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
@@ -61,6 +73,9 @@ ROUTES = [
     {"id": "ZOC", "name": "Ruta Zocalera · Seguro IMSS – Zócalo", "short": "Z", "chip": "Zocalera", "color": "#1267ff",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_zocalera.kml", "circuito": True,
      "units": 10},
+    {"id": "PCB", "name": "Ruta Plazuela – CBTIS", "short": "C", "chip": "CBTIS", "color": "#c026d3",
+     "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_plazuela_cbtis.kml", "circuito": True,
+     "units": 4, "units_pending": True},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -86,36 +101,46 @@ def osrm(points):
 
 
 def read_kml(path):
-    """Devuelve (trazo [[lat, lon], ...] con todos los tramos unidos, puntos [(nombre, lat, lon)])."""
+    """Lee el KML por capas (Folder): cada capa con línea es un tramo (p. ej. IDA y VUELTA) con sus
+    puntos. Devuelve (trazo [[lat, lon], ...] con los tramos unidos en orden,
+    puntos [(nombre, lat, lon, i_ini, i_fin)]) donde i_ini..i_fin es el pedazo del trazo de su tramo."""
+    k = f"{{{KML_NS['k']}}}"
     root = ET.parse(path).getroot()
-    line = []
-    for i, el in enumerate(root.findall(".//k:LineString/k:coordinates", KML_NS)):
-        seg = []
-        for tok in el.text.split():
-            lon, lat = map(float, tok.split(",")[:2])
-            seg.append([round(lat, 6), round(lon, 6)])
-        if line:
-            gap = haversine(line[-1], seg[0])
-            if gap > 30:
-                raise SystemExit(f"{path.name}: el tramo {i + 1} empieza a {gap:.0f} m de donde acaba el anterior")
-        for p in seg:
-            if not line or p != line[-1]:
-                line.append(p)
-    points = []
-    for pm in root.iter(f"{{{KML_NS['k']}}}Placemark"):
-        c = pm.find(".//k:Point/k:coordinates", KML_NS)
-        if c is None:
-            continue
-        lon, lat = map(float, c.text.strip().split(",")[:2])
-        points.append((pm.findtext("k:name", "", KML_NS).strip(), round(lat, 6), round(lon, 6)))
+    folders = root.findall(f".//{k}Folder") or [root.find(f"{k}Document")]
+    line, points = [], []
+    for folder in folders:
+        coords_el = folder.findall(f".//{k}LineString/{k}coordinates")
+        if not coords_el:
+            continue                       # capas vacías ("Capa sin título")
+        i_ini = max(0, len(line) - 1)
+        for el in coords_el:
+            seg = []
+            for tok in el.text.split():
+                lon, lat = map(float, tok.split(",")[:2])
+                seg.append([round(lat, 6), round(lon, 6)])
+            if line:
+                gap = haversine(line[-1], seg[0])
+                if gap > 30:
+                    raise SystemExit(f"{path.name}: «{folder.findtext(k + 'name')}» empieza a {gap:.0f} m de donde acaba el tramo anterior")
+            for p in seg:
+                if not line or p != line[-1]:
+                    line.append(p)
+        i_fin = len(line) - 1
+        for pm in folder.iter(f"{k}Placemark"):
+            c = pm.find(f".//{k}Point/{k}coordinates")
+            if c is not None:
+                lon, lat = map(float, c.text.strip().split(",")[:2])
+                points.append((pm.findtext(f"{k}name", "").strip(), round(lat, 6), round(lon, 6), i_ini, i_fin))
     return line, points
 
 
-def project(path, cum, pt):
-    """Distancia a lo largo del trazo (m) del punto más cercano a pt, y qué tan lejos queda."""
+def project(path, cum, pt, i_ini=0, i_fin=None):
+    """Distancia a lo largo del trazo (m) del punto más cercano a pt (buscando sólo entre los
+    vértices i_ini..i_fin), y qué tan lejos queda."""
     best = (float("inf"), 0.0)
     kx = math.cos(math.radians(pt[0]))
-    for i in range(len(path) - 1):
+    i_fin = len(path) - 1 if i_fin is None else i_fin
+    for i in range(i_ini, i_fin):
         a, b = path[i], path[i + 1]
         ax, ay, bx, by, px, py = a[1] * kx, a[0], b[1] * kx, b[0], pt[1] * kx, pt[0]
         dx, dy = bx - ax, by - ay
@@ -131,24 +156,43 @@ def build_kml_route(r):
     if not r.get("circuito"):
         raise SystemExit(f"{r['id']}: por ahora las rutas KML deben ser circuitos de un sentido")
     path, points = read_kml(ROOT / r["kml"])
+    # Cerrar el circuito: si la vuelta acaba un poco antes de donde arranca la ida (Google Maps
+    # ubica la misma dirección en dos puntos), se une en línea recta y la terminal pasa a ser
+    # donde acaba la vuelta.
+    cierre = haversine(path[-1], path[0])
+    if cierre > 30:
+        if cierre > 150:
+            raise SystemExit(f"{r['id']}: la vuelta acaba a {cierre:.0f} m del inicio de la ida; no cierra el circuito")
+        path = [path[-1]] + path
+        points = [(n, la, lo, a + 1, b + 1) for n, la, lo, a, b in points]
     cum = [0.0]
     for i in range(1, len(path)):
         cum.append(cum[-1] + haversine(path[i - 1], path[i]))
     L = cum[-1]
-    placed, seen = [], set()
-    for name, lat, lon in points:
+
+    def circ(a, b):
+        d = abs(a - b) % L
+        return min(d, L - d)
+
+    placed = []
+    # primero el punto de la terminal, para que gane sobre otra copia suya unos metros adelante
+    points.sort(key=lambda p: haversine(path[0], (p[1], p[2])) >= 30)
+    for name, lat, lon, i_ini, i_fin in points:
         key = name.split(",")[0].strip()
         sid, label = NOMBRES_KML.get(key, (slug(key), key))
-        if sid in seen:
-            continue                      # la terminal y los puntos de unión vienen repetidos
-        seen.add(sid)
-        STOPS[sid] = (label, lat, lon)
+        STOPS.setdefault(sid, (label, lat, lon))      # una parada compartida conserva su primer punto
         if haversine(path[0], (lat, lon)) < 30:
             pos, off = 0.0, haversine(path[0], (lat, lon))   # terminal: inicio del circuito
         else:
-            pos, off = project(path, cum, (lat, lon))
+            pos, off = project(path, cum, (lat, lon), i_ini, i_fin)   # sólo sobre su tramo (ida o vuelta)
+            if off > MAX_DIST_PARADA_M:
+                pos, off = project(path, cum, (lat, lon))
         if off > MAX_DIST_PARADA_M:
             raise SystemExit(f"{r['id']}: la parada «{label}» queda a {off:.0f} m del trazo")
+        # la misma parada puede servir ida y vuelta (dos pasadas), pero un punto repetido
+        # en el mismo lugar (terminal, unión de tramos) cuenta una sola vez
+        if any(s == sid and circ(p, pos) < 150 for p, s in placed):
+            continue
         placed.append((pos, sid))
     placed.sort()
     if placed[0][0] != 0.0:

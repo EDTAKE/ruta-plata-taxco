@@ -1,0 +1,10 @@
+{
+  "name": "Ruta Plata · Transporte Taxco",
+  "short_name": "Ruta Plata",
+  "lang": "es-MX",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0e7490",
+  "theme_color": "#0e7490",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

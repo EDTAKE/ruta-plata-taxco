@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ruta Plata Taxco</title>
+  <meta name="description" content="Prototipo de app de transporte público con GPS para Taxco de Alarcón, Guerrero.">
+  <meta name="theme-color" content="#0e7490">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icon.svg" alt="" width="28" height="28">
+      <div>
+        <strong>Ruta Plata</strong>
+        <span>Taxco de Alarcón</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="live" title="Las unidades se mueven con datos simulados"><i></i>En vivo · simulado</span>
+      <button id="speedBtn" class="chip-btn" title="Acelerar la simulación para demos">x1</button>
+    </div>
+  </header>
+
+  <div id="routeChips" class="route-chips" role="toolbar" aria-label="Filtrar rutas"></div>
+
+  <main id="map" aria-label="Mapa de Taxco"></main>
+
+  <div class="fabs">
+    <button id="locateBtn" class="fab" title="Usar mi GPS" aria-label="Usar mi GPS">
+      <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <section id="sheet" class="sheet" aria-label="Panel">
+    <button id="sheetHandle" class="sheet-handle" aria-label="Expandir o contraer panel"><span></span></button>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="near" class="active">Cerca de mí</button>
+      <button role="tab" data-tab="plan">¿A dónde vas?</button>
+      <button role="tab" data-tab="routes">Rutas</button>
+      <button role="tab" data-tab="driver">Conductor</button>
+    </nav>
+    <div id="locNotice" class="notice" hidden></div>
+    <div class="sheet-body">
+      <div id="tab-near" class="tab-panel active"></div>
+      <div id="tab-plan" class="tab-panel">
+        <label class="field">
+          <span>Origen</span>
+          <div class="fake-input" id="originLabel">Mi ubicación</div>
+        </label>
+        <label class="field">
+          <span>Destino</span>
+          <select id="destSelect"></select>
+        </label>
+        <div id="planResults"></div>
+      </div>
+      <div id="tab-routes" class="tab-panel"></div>
+      <div id="tab-driver" class="tab-panel"></div>
+    </div>
+  </section>
+
+  <div id="tracker" class="tracker" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="data/routes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

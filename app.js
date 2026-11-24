@@ -213,7 +213,9 @@ const meMarker = L.marker(me.latlng, {
   draggable: true, zIndexOffset: 1000, title: 'Mi ubicación (arrástrame)',
   icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }),
 }).addTo(map);
-meMarker.on('dragend', () => setMe(Object.values(meMarker.getLatLng()), 'elegida en el mapa'));
+let geoWatch = null;
+const stopGeoWatch = () => { if (geoWatch != null) navigator.geolocation.clearWatch(geoWatch); geoWatch = null; };
+meMarker.on('dragend', () => { stopGeoWatch(); setMe(Object.values(meMarker.getLatLng()), 'elegida en el mapa'); });
 
 function setMe(latlng, source) {
   me = { latlng, source };
@@ -224,8 +226,14 @@ function setMe(latlng, source) {
 }
 function renderNotice(extra) {
   const n = $('#locNotice');
-  if (me.source === 'GPS') { n.hidden = true; return; }
+  const far = haversine(me.latlng, TAXCO_CENTER);
+  if (me.source === 'GPS' && far < 25000) { n.hidden = true; return; }
   n.hidden = false;
+  if (me.source === 'GPS') {
+    n.innerHTML = `📍 Usando tu GPS: estás a ${fmtDist(far)} de Taxco, así que no hay paradas cerca. <button id="backTaxco">Volver a Taxco</button>`;
+    $('#backTaxco').onclick = () => { stopGeoWatch(); setMe(DEFAULT_ME, 'de prueba'); map.flyTo(DEFAULT_ME, 16); };
+    return;
+  }
   n.innerHTML = `${extra ? esc(extra) + ' ' : ''}📍 Ubicación ${esc(me.source)}. Arrastra el punto azul o
     <button id="useGps">usa tu GPS</button>.`;
   $('#useGps').onclick = locate;
@@ -233,13 +241,13 @@ function renderNotice(extra) {
 function locate() {
   if (!navigator.geolocation) { renderNotice('Tu navegador no tiene GPS.'); return; }
   toast('Buscando tu ubicación…');
-  navigator.geolocation.getCurrentPosition(pos => {
+  stopGeoWatch();
+  let first = true;
+  // sigue la ubicación mientras te mueves; arrastrar el punto o "Volver a Taxco" la detiene
+  geoWatch = navigator.geolocation.watchPosition(pos => {
     const ll = [pos.coords.latitude, pos.coords.longitude];
-    if (haversine(ll, TAXCO_CENTER) > 25000) {
-      renderNotice(`Estás a ${fmtDist(haversine(ll, TAXCO_CENTER))} de Taxco; seguimos con una ubicación de prueba.`);
-      return;
-    }
-    setMe(ll, 'GPS'); map.flyTo(ll, 16);
+    setMe(ll, 'GPS');
+    if (first) { first = false; map.flyTo(ll, 16); }
   }, err => renderNotice(err.code === 1 ? 'Aquí no hay acceso al GPS.' : 'No se pudo obtener el GPS.'),
   { enableHighAccuracy: true, timeout: 10000 });
 }
@@ -334,7 +342,7 @@ function renderNear() {
   $('#tab-near').innerHTML = `<h3 class="section">Paradas más cercanas</h3>` + near.map(({ id, d }) => `
     <div class="card">
       <div class="card-head"><strong>🚏 ${esc(DATA.stops[id].name)}</strong>
-        <span class="muted">🚶 ${Math.max(1, Math.round(d / WALK_M_PER_MIN))} min · ${fmtDist(d)}</span></div>
+        <span class="muted">${d > 3000 ? fmtDist(d) : `🚶 ${Math.max(1, Math.round(d / WALK_M_PER_MIN))} min · ${fmtDist(d)}`}</span></div>
       ${arrivalsListHTML(id)}
       <button class="link-btn" data-goto="${esc(id)}">Ver en el mapa</button>
     </div>`).join('') +
@@ -496,7 +504,7 @@ function renderDriver() {
   p.innerHTML = `<div class="card">
       <div class="card-head"><strong><span class="badge" style="background:${u.route.color}">${esc(u.route.short)}</span> ${esc(u.id)} en servicio</strong>
         <span class="muted">${driver.sent} envíos</span></div>
-      <p class="muted">Fuente de posición: ${driver.gps ? 'GPS del teléfono' : 'simulada (fuera de Taxco o sin permiso)'}</p>
+      <p class="muted">Fuente de posición: ${driver.gps ? 'GPS del teléfono' : 'simulada (sin permiso de GPS o esperando señal)'}</p>
       <div class="row occ"><span>Pasajeros</span><button class="btn secondary" id="occMinus">−</button><b>${u.occupied}/${u.seats}</b><button class="btn secondary" id="occPlus">+</button></div>
       <div class="row" style="margin-top:10px">
         <button class="btn secondary" id="drvIncident">⚠️ Reportar incidente</button>
@@ -515,7 +523,8 @@ function startDriver() {
   if (navigator.geolocation) {
     driver.watchId = navigator.geolocation.watchPosition(pos => {
       const ll = [pos.coords.latitude, pos.coords.longitude];
-      driver.gps = haversine(ll, TAXCO_CENTER) < 25000 ? { ll, speed: pos.coords.speed, heading: pos.coords.heading, acc: pos.coords.accuracy } : null;
+      if (!driver.gps) map.flyTo(ll, 16);
+      driver.gps = { ll, speed: pos.coords.speed, heading: pos.coords.heading, acc: pos.coords.accuracy };
     }, () => { driver.gps = null; }, { enableHighAccuracy: true, maximumAge: 3000 });
   }
   const send = () => {

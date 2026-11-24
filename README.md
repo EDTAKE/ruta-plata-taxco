@@ -29,7 +29,8 @@ p. ej. GitHub Pages o Netlify).
 | **Seguir unidad** | Tarjeta flotante con ETA en vivo y alerta (toast + vibración) cuando falta < 2 min. |
 
 Extras: botón **x1 / x5 / x20** para acelerar la simulación en demos, modo oscuro automático, punto azul
-arrastrable si no estás en Taxco (si tu GPS te ubica a más de 25 km, se usa una ubicación de prueba).
+arrastrable. El GPS real se usa a cualquier distancia; fuera de Taxco aparece un aviso con
+"Volver a Taxco" para regresar a la ubicación de prueba.
 
 ## Archivos
 

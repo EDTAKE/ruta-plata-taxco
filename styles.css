@@ -259,7 +259,8 @@ h3.section { margin: 4px 0 10px; font-size: 13px; text-transform: uppercase; let
   z-index: 2000; background: var(--toast-bg); color: var(--toast-fg); padding: 10px 16px; border-radius: 12px;
   font-size: 14px; box-shadow: var(--shadow); transition: transform .3s ease; max-width: calc(100vw - 32px);
 }
-.toast.show { transform: translate(-50%, 0); }
+.toast { visibility: hidden; }
+.toast.show { transform: translate(-50%, 0); visibility: visible; }
 
 /* ---------- escritorio: panel lateral ---------- */
 @media (min-width: 900px) {

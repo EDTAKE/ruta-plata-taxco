@@ -605,5 +605,8 @@ setInterval(tick, 500);
 
 renderChips(); fillDest(); renderNotice(); renderActive(true);
 // encuadre inicial: la mancha urbana (sin localidades foráneas)
-map.fitBounds(L.latLngBounds(['arcos', 'plats', 'cristo', 'bermeja', 'libramiento'].map(id => [DATA.stops[id].lat, DATA.stops[id].lon])), fitPad());
+const fitTown = () => map.fitBounds(L.latLngBounds(['arcos', 'plats', 'cristo', 'bermeja', 'libramiento']
+  .map(id => [DATA.stops[id].lat, DATA.stops[id].lon])), { ...fitPad(), maxZoom: 16 });
+// si la página carga oculta o sin tamaño (pestaña en segundo plano), encuadra cuando ya mida algo
+if (map.getSize().x > 100) fitTown(); else { const once = () => { if (map.getSize().x > 100) { fitTown(); window.removeEventListener('resize', once); } }; window.addEventListener('resize', once); }
 })();

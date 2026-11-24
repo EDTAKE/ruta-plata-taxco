@@ -75,7 +75,7 @@ ROUTES = [
      "units": 10},
     {"id": "PCB", "name": "Ruta Plazuela – CBTIS", "short": "C", "chip": "CBTIS", "color": "#c026d3",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_plazuela_cbtis.kml", "circuito": True,
-     "units": 4, "units_pending": True},
+     "units": 6},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"

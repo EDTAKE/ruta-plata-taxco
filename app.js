@@ -44,7 +44,8 @@ const routes = DATA.routes.map(r => {
   const half = r.stops.length - 1;
   const visits = r.sequence.slice(0, -1).map((stopId, k) => ({
     k, stopId, pos: stopM[k],
-    toward: k < half ? DATA.stops[r.stops[r.stops.length - 1]].name : DATA.stops[r.stops[0]].name,
+    // circuitos (KML) traen su sentido explícito; las de ida y vuelta lo deducen
+    toward: r.toward ? r.toward[k] : k < half ? DATA.stops[r.stops[r.stops.length - 1]].name : DATA.stops[r.stops[0]].name,
   }));
   const cycleS = L / moving + DWELL_S * (r.sequence.length - 1);
   return { ...r, cum, L, stopM, moving, visits, cycleS, visible: true };
@@ -362,17 +363,19 @@ function renderRoutes() {
   $('#tab-routes').innerHTML = routes.map(r => {
     const n = units.filter(u => u.route === r).length;
     const freq = Math.round(r.cycleS / n / 60);
+    const km = r.circuito ? `${(r.L / 1000).toFixed(1)} km por vuelta` : `${(r.L / 2000).toFixed(1)} km por sentido`;
     return `<div class="card">
       <div class="route-row"><span class="badge" style="background:${r.color}">${esc(r.short)}</span>
-        <div class="info"><strong>${esc(r.name)}</strong><div class="muted">
-          ${fmtFare(r)} · cada ~${freq} min · ${n} unidades · ${(r.L / 2000).toFixed(1)} km por sentido</div></div></div>
+        <div class="info"><strong>${esc(r.name)}</strong>
+          <span class="tag ${r.confirmada ? 'tag-ok' : ''}">${r.confirmada ? 'Recorrido confirmado' : 'Ejemplo'}</span>
+          <div class="muted">${fmtFare(r)} · cada ~${freq} min${r.units_pending ? ' (estimado)' : ''} · ${n} unidades · ${km}${r.circuito ? ' · circuito de un sentido' : ''}</div></div></div>
       <details><summary class="link-btn">Paradas (${r.stops.length})</summary>
         <ol class="stops-line" style="--c:${r.color}">${r.stops.map(id => `<li>${esc(DATA.stops[id].name)}</li>`).join('')}</ol>
       </details>
       <div class="row"><button class="link-btn" data-fit="${r.id}">Ver ruta</button>
         <button class="link-btn" data-toggle="${r.id}">${r.visible ? 'Ocultar' : 'Mostrar'}</button></div>
     </div>`;
-  }).join('') + `<p class="muted small">Tarifas urbanas: $11.00 en rutas que llegan al Zócalo y $11.50 en las demás. Recorridos, paradas y tarifas foráneas aún son ilustrativos.</p>`;
+  }).join('') + `<p class="muted small">Tarifas urbanas: $11.00 en rutas que llegan al Zócalo y $11.50 en las demás. Las rutas marcadas «Ejemplo» todavía no son recorridos reales.</p>`;
 }
 document.addEventListener('click', e => {
   const f = e.target.closest('[data-fit]');
@@ -384,7 +387,7 @@ document.addEventListener('click', e => {
 function renderChips() {
   $('#routeChips').innerHTML = routes.map(r => `
     <button class="route-chip ${r.visible ? '' : 'off'}" data-toggle="${r.id}" aria-pressed="${r.visible}" title="${esc(r.name)}">
-      <span class="badge" style="background:${r.color}">${esc(r.short)}</span>${esc(r.name.split('·')[1] ? r.name.split('·')[1].split('–')[0].trim() : r.name)}
+      <span class="badge" style="background:${r.color}">${esc(r.short)}</span>${esc(r.chip || (r.name.split('·')[1] ? r.name.split('·')[1].split('–')[0].trim() : r.name))}
     </button>`).join('');
 }
 function toggleRoute(id) {

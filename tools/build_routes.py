@@ -83,6 +83,21 @@ NOMBRES_KML = {
     "De Los Plateros 54":         ("fad-plateros",    "FAD Plateros"),
     "De Los Plateros 184":        ("elektra-plateros", "Elektra"),
     "De Los Plateros 164":        ("plateros-catarina-norte", "La Misión"),
+    # Ruta Taxco – Tehuilotepec – Acamixtla (foránea)
+    "De Los Plateros 278":        ("casa-janna",      "Casa Janna"),
+    "Segunda de la Catarina 14":  ("plateros-fundiciones", "Reforma"),
+    "Cuernavaca - Taxco 54":      ("fad-plateros",    "FAD Plateros"),
+    "Adolfo López Mateos 1":      ("plateros-catarina-norte", "La Misión"),
+    "De Los Plateros 68":         ("super-che",       "Super Che"),
+    "De La Florida 31":           ("teleferico",      "Teleférico"),
+    "Mirna Acevedo de Juárez Cisneros 22": ("el-gas", "El Gas"),
+    "Toluca y México":            ("martelas",        "Martelas"),
+    "Tonatico - Taxco":           ("tehuilotepec-1",  "Tehuilotepec 1"),
+    "HC59+9R":                    ("tehuilotepec-2",  "Tehuilotepec 2 - El Crucero"),
+    "El Cedro":                   ("el-cedrito",      "El Cedrito"),
+    "Av. Cuauhtémoc 85":          ("secundaria-caudillos", "Secundaria Caudillos"),
+    "Vicente Guerrero 7":         ("iglesia-acamixtla", "Iglesia Acamixtla"),
+    "Juan N Álvarez 17":          ("zocalo-acamixtla", "Zócalo Acamixtla"),   # ojo: no es "zocalo"
 }
 
 # Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
@@ -91,10 +106,28 @@ NOMBRES_KML = {
 TARIFA_ZOCALO = 11.00
 TARIFA_URBANA = 11.50
 VEL_COMBI_MS = 4.5   # velocidad media en movimiento para rutas KML (~16 km/h), sin contar paradas
+VEL_FORANEA_MS = 7.0  # foráneas: buena parte en carretera (~25 km/h)
 MAX_DIST_PARADA_M = 60
 
 
+def tarifa_por_tramo(r, stops):
+    """Índice de tramo de cada parada: 0 dentro de Taxco, 1, 2, … para cada parada foránea.
+    Tarifa entre dos paradas = max(mínima, máxima − baja × (N − |índice_a − índice_b|))."""
+    t = r["tarifa_por_tramo"]
+    idx, k, urbana = {}, 0, True
+    for sid in stops:
+        if not urbana:
+            k += 1
+        idx[sid] = k
+        if sid == t["ultima_parada_urbana"]:
+            urbana = False
+    return {"fare_idx": idx, "fare_n": k, "fare_max": t["maxima"], "fare_step": t["baja_por_parada"],
+            "fare_min": t["minima"]}
+
+
 def tarifa(r, stops):
+    if r.get("tarifa_por_tramo"):
+        return r["tarifa_por_tramo"]["maxima"]
     if r["tipo"] == "foranea":
         return r["fare"]
     return TARIFA_ZOCALO if "zocalo" in stops else TARIFA_URBANA
@@ -113,6 +146,11 @@ ROUTES = [
     {"id": "CBG", "name": "Ruta CBTIS – Garita", "short": "G", "chip": "CBTIS – Garita", "color": "#dc2626",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_cbtis_garita.kml", "ida_y_vuelta": True,
      "units": 6},
+    {"id": "TAC", "name": "Ruta Taxco – Tehuilotepec – Acamixtla", "short": "T", "chip": "Tehui – Acamixtla", "color": "#0d9488",
+     "tipo": "foranea", "confirmada": True, "kml": "rutas/ruta_tehui_acamixtla.kml", "ida_y_vuelta": True, "units": 5,
+     # De terminal a terminal $25; cada parada foránea que se deja de recorrer baja $2; dentro de Taxco $11.50.
+     "tarifa_por_tramo": {"maxima": 25.00, "baja_por_parada": 2.00, "minima": TARIFA_URBANA,
+                          "ultima_parada_urbana": "gasolinera-arcos"}},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -263,8 +301,10 @@ def build_kml_route(r):
         seq = stops + [stops[0]]
         stop_m = [round(p, 1) for p, _ in placed] + [round(L, 1)]
         toward = [STOPS[seq[k + 1]][0] for k in range(len(seq) - 1)]
-    return {**r, "stops": stops, "fare": tarifa(r, stops), "sequence": seq, "stop_m": stop_m, "toward": toward,
-            "length_m": round(L, 1), "osrm_s": round(L * 0.6 / VEL_COMBI_MS), "path": path}
+    extra = tarifa_por_tramo(r, stops) if r.get("tarifa_por_tramo") else {}
+    return {**r, **extra, "stops": stops, "fare": tarifa(r, stops), "sequence": seq, "stop_m": stop_m, "toward": toward,
+            "length_m": round(L, 1),
+            "osrm_s": round(L * 0.6 / (VEL_FORANEA_MS if r["tipo"] == "foranea" else VEL_COMBI_MS)), "path": path}
 
 
 def build_osrm_route(r):
@@ -291,7 +331,7 @@ def main():
         out_routes.append(o)
         kind = ("circuito (KML)" if r.get("circuito") else "ida y vuelta (KML)") if r.get("kml") else "ida+vuelta (OSRM)"
         print(f"{r['id']}: {o['length_m']/1000:.1f} km {kind}, {len(o['path'])} puntos, "
-              f"{len(o['stops'])} paradas, tarifa ${o['fare']:.2f}")
+              f"{len(o['stops'])} paradas, tarifa " + (f"${o['fare']:.2f}" if o['fare'] is not None else "por confirmar"))
         for sid, m in zip(o["sequence"], o["stop_m"]):
             print(f"   {m:7.0f} m  {STOPS[sid][0]}")
     used = {s for o in out_routes for s in o["sequence"]}

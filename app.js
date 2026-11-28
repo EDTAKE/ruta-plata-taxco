@@ -31,7 +31,18 @@ function bearing(a, b) {
   return (Math.atan2(y, x) / toR + 360) % 360;
 }
 const fmtMin = s => s < 45 ? 'llegando' : `${Math.round(s / 60)} min`;
-const fmtFare = r => `$${r.fare.toFixed(2)} MXN${r.fare_pending ? ' (por confirmar)' : ''}`;
+const money = v => `$${v.toFixed(2)}`;
+/** Tarifa de un viaje. Las foráneas cobran por tramo: de terminal a terminal fare_max, y baja fare_step
+ *  por cada parada foránea que no se recorre, sin bajar de fare_min (lo que cuesta dentro de Taxco). */
+function tripFare(r, fromId, toId) {
+  if (!r.fare_idx) return r.fare;
+  const d = Math.abs((r.fare_idx[fromId] || 0) - (r.fare_idx[toId] || 0));
+  return Math.max(r.fare_min, r.fare_max - r.fare_step * (r.fare_n - d));
+}
+const fmtFare = r => r.fare_idx ? `${money(r.fare_min)} a ${money(r.fare_max)} MXN según tramo`
+  : r.fare == null ? 'Tarifa por confirmar'
+  : `${money(r.fare)} MXN${r.fare_pending ? ' (por confirmar)' : ''}`;
+const fmtTripFare = (r, a, b) => r.fare_idx ? `${money(tripFare(r, a, b))} MXN` : fmtFare(r);
 const fmtDist = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
 
 /* ---------------- modelo de rutas ---------------- */
@@ -49,7 +60,9 @@ const routes = DATA.routes.map(r => {
     toward: r.toward ? r.toward[k] : k < half ? DATA.stops[r.stops[r.stops.length - 1]].name : DATA.stops[r.stops[0]].name,
   }));
   const cycleS = L / moving + DWELL_S * (r.sequence.length - 1);
-  return { ...r, cum, L, stopM, moving, visits, cycleS, visible: true };
+  // en rutas de ida y vuelta, punto donde la combi da la vuelta (terminal lejana)
+  const turnM = r.circuito ? null : stopM[half];
+  return { ...r, cum, L, stopM, moving, visits, cycleS, turnM, visible: true };
 });
 const routeById = Object.fromEntries(routes.map(r => [r.id, r]));
 
@@ -378,9 +391,11 @@ function renderRoutes() {
       <div class="route-row"><span class="badge" style="background:${r.color}">${esc(r.short)}</span>
         <div class="info"><strong>${esc(r.name)}</strong>
           ${r.confirmada ? '<span class="tag tag-ok">Recorrido confirmado</span>' : ''}
+          ${r.tipo === 'foranea' ? '<span class="tag">Foránea</span>' : ''}
           <div class="muted">${fmtFare(r)} · cada ~${freq} min${r.units_pending ? ' (estimado)' : ''} · ${n} unidades · ${km}${r.circuito ? ' · circuito de un sentido' : ''}</div></div></div>
       <details><summary class="link-btn">Paradas (${r.stops.length})</summary>
-        <ol class="stops-line" style="--c:${r.color}">${r.stops.map(id => `<li>${esc(DATA.stops[id].name)}</li>`).join('')}</ol>
+        <ol class="stops-line" style="--c:${r.color}">${r.stops.map(id => `<li>${esc(DATA.stops[id].name)}${r.fare_idx && id !== r.stops[0]
+          ? ` <span class="muted small">· ${money(tripFare(r, r.stops[0], id))} desde ${esc(DATA.stops[r.stops[0]].name)}</span>` : ''}</li>`).join('')}</ol>
       </details>
       <div class="row"><button class="link-btn" data-fit="${r.id}">Ver ruta</button>
         <button class="link-btn" data-toggle="${r.id}">${r.visible ? 'Ocultar' : 'Mostrar'}</button></div>
@@ -437,6 +452,8 @@ function computePlans(destId) {
         const as = DATA.stops[av.stopId];
         const walk2 = haversine([as.lat, as.lon], dest) * 1.3;
         if (walk2 > MAX_WALK_M) return;
+        // ida y vuelta: no proponer viajes que pasan por una terminal (subir de regreso para luego ir)
+        if (r.turnM != null && (av.pos <= bv.pos || (bv.pos < r.turnM - 1 && av.pos > r.turnM + 1))) return;
         const rideM = ((av.pos - bv.pos) % r.L + r.L) % r.L;
         const nStops = r.visits.filter(v => { const d = ((v.pos - bv.pos) % r.L + r.L) % r.L; return d > 1 && d < rideM - 1; }).length;
         const rideS = rideM / r.moving + nStops * DWELL_S;
@@ -471,7 +488,7 @@ function renderPlan(redraw) {
       <ol class="steps">
         <li><span class="ico">🚶</span><span>Camina ${Math.max(1, Math.round(o.walk1 / WALK_M_PER_MIN))} min a <b>${esc(DATA.stops[o.bv.stopId].name)}</b></span></li>
         <li><span class="ico">⏱️</span><span>La unidad <b>${esc(o.unit.id)}</b> pasa en <b>${fmtMin(o.waitS)}</b>${o.waitS < (o.walk1 / WALK_M_PER_MIN) * 60 ? ' (¡apúrate!)' : ''}</span></li>
-        <li><span class="ico">🚐</span><span>Viaja ${o.nStops + 1} parada${o.nStops ? 's' : ''} (${fmtDist(o.rideM)}, ~${Math.round(o.rideS / 60)} min) · <b>${fmtFare(o.r)}</b></span></li>
+        <li><span class="ico">🚐</span><span>Viaja ${o.nStops + 1} parada${o.nStops ? 's' : ''} (${fmtDist(o.rideM)}, ~${Math.round(o.rideS / 60)} min) · <b>${fmtTripFare(o.r, o.bv.stopId, o.av.stopId)}</b></span></li>
         <li><span class="ico">🏁</span><span>Baja en <b>${esc(DATA.stops[o.av.stopId].name)}</b>${o.walk2 > 60 ? ` y camina ${Math.round(o.walk2 / WALK_M_PER_MIN)} min` : ''}</span></li>
       </ol>
       <div class="row" style="margin-top:8px"><button class="btn" data-follow="${esc(o.unit.id)}" data-stop="${esc(o.bv.stopId)}" data-visit="${o.bv.k}">Avisarme cuando llegue</button></div>

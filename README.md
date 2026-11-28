@@ -52,6 +52,9 @@ dentro de la ciudad (`TARIFA_ZOCALO` / `TARIFA_URBANA` en `tools/build_routes.py
   Comparte con la Zocalera La Garita, La Misión, Reforma, La Terminal y Seguro IMSS.
 - Ruta CBTIS – Garita: ida y vuelta Campamento – La Garita por las mismas calles, 6.4 km por sentido,
   19 paradas, 6 unidades (`rutas/ruta_cbtis_garita.kml` trae sólo la ida). Comparte 13 paradas con las demás rutas.
+- Ruta Taxco – Tehuilotepec – Acamixtla (foránea): ida y vuelta Casa Janna – Zócalo Acamixtla, 8.4 km por
+  sentido, 17 paradas, 5 unidades (`rutas/ruta_tehui_acamixtla.kml`). Tarifa por tramo: $25.00 de terminal a
+  terminal, $2 menos por cada parada foránea que no se recorre, mínimo $11.50 (lo de Taxco).
 Las rutas de ejemplo se quitaron; las siguientes se agregan con [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
 
 ## Camino a una versión real

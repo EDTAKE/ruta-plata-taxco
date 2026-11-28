@@ -149,6 +149,7 @@ ROUTES = [
     {"id": "TAC", "name": "Ruta Taxco – Tehuilotepec – Acamixtla", "short": "T", "chip": "Tehui – Acamixtla", "color": "#0d9488",
      "tipo": "foranea", "confirmada": True, "kml": "rutas/ruta_tehui_acamixtla.kml", "ida_y_vuelta": True, "units": 5,
      # De terminal a terminal $25; cada parada foránea que se deja de recorrer baja $2; dentro de Taxco $11.50.
+     # Confirmado (nov 2026), también para viajes entre dos paradas intermedias.
      "tarifa_por_tramo": {"maxima": 25.00, "baja_por_parada": 2.00, "minima": TARIFA_URBANA,
                           "ultima_parada_urbana": "gasolinera-arcos"}},
 ]

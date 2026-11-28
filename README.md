@@ -45,11 +45,13 @@ dentro de la ciudad (`TARIFA_ZOCALO` / `TARIFA_URBANA` en `tools/build_routes.py
 
 **Rutas cargadas:**
 - Ruta Zocalera: circuito Seguro IMSS – Zócalo, 3.3 km, 17 paradas, 10 unidades (`rutas/ruta_zocalera.kml`).
-- Ruta Plazuela – CBTIS: circuito Plazuela – Campamento/CBTIS, 4.0 km, 16 paradas, 6 unidades
+- Ruta Plazuela – CBTIS: circuito Plazuela – Campamento, 4.0 km, 16 paradas, 6 unidades
   (`rutas/ruta_plazuela_cbtis.kml`; la ida y la vuelta vienen en capas separadas).
 - Ruta Arcos – Pedro Martín: ida y vuelta Gasolinera Arcos – Gasolinera Pedro Martín por las mismas
   calles, 4.3 km por sentido, 13 paradas, 8 unidades (`rutas/ruta_arcos_pm.kml` trae sólo la ida).
   Comparte con la Zocalera La Garita, La Misión, Reforma, La Terminal y Seguro IMSS.
+- Ruta CBTIS – Garita: ida y vuelta Campamento – La Garita por las mismas calles, 6.4 km por sentido,
+  19 paradas, 6 unidades (`rutas/ruta_cbtis_garita.kml` trae sólo la ida). Comparte 13 paradas con las demás rutas.
 Las rutas de ejemplo se quitaron; las siguientes se agregan con [RUTAS_PLANTILLA.md](RUTAS_PLANTILLA.md).
 
 ## Camino a una versión real

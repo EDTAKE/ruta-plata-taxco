@@ -50,7 +50,7 @@ NOMBRES_KML = {
     "Loma del Santito 120":       ("la-cadena",       "La Cadena"),
     "Loma del Santito 160":       ("telmex-santito",  "Telmex"),
     "Loma del Santito 182":       ("montana-de-plata", "Montaña de Plata"),
-    "H92J+JC":                    ("cbtis",           "Campamento - CBTIS"),
+    "H92J+JC":                    ("cbtis",           "Campamento"),
     "20 de Noviembre 21":         ("primaria-20-nov", "Primaria 20 de Noviembre"),
     "Tlachichilpan 10":           ("ojeda-1",         "Ojeda 1"),
     "Del Progreso 25":            ("ojeda-2",         "Ojeda 2"),
@@ -67,6 +67,22 @@ NOMBRES_KML = {
     "Huiyatengo 285":             ("huiyatengo",      "Huiyatengo"),
     "De Los Plateros 42":         ("pedro-martin",    "Pedro Martín"),
     "De Los Plateros 333":        ("gasolinera-pedro-martin", "Gasolinera Pedro Martín"),
+    # Ruta CBTIS – Garita (los ids repetidos son paradas que comparte con otras rutas)
+    "C. Coordinadores 16":        ("cbtis-82",        "CBTIS 82"),
+    "Emiliano Zapata 1":          ("zapata",          "Zapata"),
+    "Cuauhtémoc 48":              ("los-pocitos",     "Los Pocitos"),
+    "Del Plomo 2":                ("fovissste",       "Fovissste"),
+    "Cuauhtémoc 1":               ("gigante",         "Gigante"),
+    "Iguala - Taxco 454":         ("gasolinera-pedro-martin", "Gasolinera Pedro Martín"),
+    "De Los Plateros 277":        ("huiyatengo",      "Huiyatengo"),
+    "De Los Plateros 380A":       ("estrella-de-oro", "Estrella de Oro"),
+    "De Los Plateros 332":        ("coppel",          "Coppel"),
+    "De Los Plateros 310":        ("plateros-501",    "Telmex"),
+    "Taxco Iguala":               ("plateros-mora",   "La Terminal"),
+    "De Los Plateros 232":        ("plateros-fundiciones", "Reforma"),
+    "De Los Plateros 54":         ("fad-plateros",    "FAD Plateros"),
+    "De Los Plateros 184":        ("elektra-plateros", "Elektra"),
+    "De Los Plateros 164":        ("plateros-catarina-norte", "La Misión"),
 }
 
 # Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
@@ -88,12 +104,15 @@ ROUTES = [
     {"id": "ZOC", "name": "Ruta Zocalera · Seguro IMSS – Zócalo", "short": "Z", "chip": "Zocalera", "color": "#1267ff",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_zocalera.kml", "circuito": True,
      "units": 10},
-    {"id": "PCB", "name": "Ruta Plazuela – CBTIS", "short": "C", "chip": "CBTIS", "color": "#c026d3",
+    {"id": "PCB", "name": "Ruta Plazuela – CBTIS", "short": "C", "chip": "Plazuela – CBTIS", "color": "#c026d3",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_plazuela_cbtis.kml", "circuito": True,
      "units": 6},
     {"id": "APM", "name": "Ruta Arcos – Pedro Martín", "short": "A", "chip": "Arcos – P. Martín", "color": "#16a34a",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_arcos_pm.kml", "ida_y_vuelta": True,
      "units": 8},
+    {"id": "CBG", "name": "Ruta CBTIS – Garita", "short": "G", "chip": "CBTIS – Garita", "color": "#dc2626",
+     "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_cbtis_garita.kml", "ida_y_vuelta": True,
+     "units": 6},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -205,17 +224,21 @@ def build_kml_route(r):
         if sid in STOPS and (STOPS[sid][1], STOPS[sid][2]) != (lat, lon):
             candidatos.insert(0, (STOPS[sid][1], STOPS[sid][2]))   # parada compartida: mismo punto en todas
         STOPS.setdefault(sid, (label, lat, lon))
-        for clat, clon in candidatos:
+        pos = off = None
+        for clat, clon in candidatos:       # ¿alguno de sus puntos es una terminal de este trazo?
             if haversine(path[0], (clat, clon)) < 30:
                 pos, off = 0.0, haversine(path[0], (clat, clon))   # terminal: inicio del trazo
-            elif ida_vuelta and haversine(path[-1], (clat, clon)) < 30:
+                break
+            if ida_vuelta and haversine(path[-1], (clat, clon)) < 30:
                 pos, off = L, haversine(path[-1], (clat, clon))    # terminal del otro extremo
-            else:
+                break
+        if pos is None:
+            for clat, clon in candidatos:
                 pos, off = project(path, cum, (clat, clon), i_ini, i_fin)   # sólo sobre su tramo (ida o vuelta)
                 if off > MAX_DIST_PARADA_M:
                     pos, off = project(path, cum, (clat, clon))
-            if off <= MAX_DIST_PARADA_M:
-                break
+                if off <= MAX_DIST_PARADA_M:
+                    break
         if off > MAX_DIST_PARADA_M:
             raise SystemExit(f"{r['id']}: la parada «{label}» queda a {off:.0f} m del trazo")
         # la misma parada puede servir ida y vuelta (dos pasadas), pero un punto repetido

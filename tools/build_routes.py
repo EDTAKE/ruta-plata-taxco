@@ -3,8 +3,10 @@
 Dos tipos de ruta:
 - Confirmadas ("kml"): trazo y paradas salen del KML exportado de Google My Maps (carpeta rutas/).
   Si el mapa trae la ruta partida en varios tramos, se unen en el orden del archivo. Las paradas
-  son los puntos del KML; se acomodan en el orden en que la combi pasa por ellas. Si es un
-  circuito de un solo sentido, se recorre en el orden en que se dibujó.
+  son los puntos del KML; se acomodan en el orden en que la combi pasa por ellas.
+  · "circuito": un solo sentido, se recorre en el orden en que se dibujó.
+  · "ida_y_vuelta": el KML trae sólo la ida; la vuelta regresa por las mismas calles y para
+    en las mismas paradas, en orden inverso.
 - Sin "kml": ida y vuelta por una lista de paradas de STOPS, trazada sobre calles con OSRM
   (útil cuando la ruta llega descrita por texto y aún no hay trazo dibujado).
 
@@ -76,6 +78,9 @@ ROUTES = [
     {"id": "PCB", "name": "Ruta Plazuela – CBTIS", "short": "C", "chip": "CBTIS", "color": "#c026d3",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_plazuela_cbtis.kml", "circuito": True,
      "units": 6},
+    {"id": "APM", "name": "Ruta Arcos PM", "short": "A", "chip": "Arcos PM", "color": "#16a34a",
+     "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_arcos_pm.kml", "ida_y_vuelta": True,
+     "units": 4, "units_pending": True},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -153,13 +158,14 @@ def project(path, cum, pt, i_ini=0, i_fin=None):
 
 
 def build_kml_route(r):
-    if not r.get("circuito"):
-        raise SystemExit(f"{r['id']}: por ahora las rutas KML deben ser circuitos de un sentido")
+    ida_vuelta = bool(r.get("ida_y_vuelta"))
+    if not r.get("circuito") and not ida_vuelta:
+        raise SystemExit(f"{r['id']}: indica si la ruta es \"circuito\" o \"ida_y_vuelta\"")
     path, points = read_kml(ROOT / r["kml"])
     # Cerrar el circuito: si la vuelta acaba un poco antes de donde arranca la ida (Google Maps
     # ubica la misma dirección en dos puntos), se une en línea recta y la terminal pasa a ser
     # donde acaba la vuelta.
-    cierre = haversine(path[-1], path[0])
+    cierre = 0 if ida_vuelta else haversine(path[-1], path[0])
     if cierre > 30:
         if cierre > 150:
             raise SystemExit(f"{r['id']}: la vuelta acaba a {cierre:.0f} m del inicio de la ida; no cierra el circuito")
@@ -171,6 +177,8 @@ def build_kml_route(r):
     L = cum[-1]
 
     def circ(a, b):
+        if ida_vuelta:                    # en ida y vuelta el inicio y el final son terminales distintas
+            return abs(a - b)
         d = abs(a - b) % L
         return min(d, L - d)
 
@@ -183,6 +191,8 @@ def build_kml_route(r):
         STOPS.setdefault(sid, (label, lat, lon))      # una parada compartida conserva su primer punto
         if haversine(path[0], (lat, lon)) < 30:
             pos, off = 0.0, haversine(path[0], (lat, lon))   # terminal: inicio del circuito
+        elif ida_vuelta and haversine(path[-1], (lat, lon)) < 30:
+            pos, off = L, haversine(path[-1], (lat, lon))    # terminal del otro extremo
         else:
             pos, off = project(path, cum, (lat, lon), i_ini, i_fin)   # sólo sobre su tramo (ida o vuelta)
             if off > MAX_DIST_PARADA_M:
@@ -198,9 +208,19 @@ def build_kml_route(r):
     if placed[0][0] != 0.0:
         raise SystemExit(f"{r['id']}: ninguna parada coincide con el inicio del trazo (terminal)")
     stops = [s for _, s in placed]
-    seq = stops + [stops[0]]
-    stop_m = [round(p, 1) for p, _ in placed] + [round(L, 1)]
-    toward = [STOPS[seq[k + 1]][0] for k in range(len(seq) - 1)]
+    if ida_vuelta:
+        if placed[-1][0] != L:
+            raise SystemExit(f"{r['id']}: ninguna parada coincide con el final de la ida (terminal)")
+        ida_m = [p for p, _ in placed]
+        seq = stops + stops[-2::-1]                       # ida y regreso por las mismas paradas
+        stop_m = [round(p, 1) for p in ida_m] + [round(2 * L - p, 1) for p in ida_m[-2::-1]]
+        n = len(stops) - 1
+        toward = [STOPS[stops[-1]][0] if k < n else STOPS[stops[0]][0] for k in range(len(seq) - 1)]
+        path, L = path + path[-2::-1], 2 * L
+    else:
+        seq = stops + [stops[0]]
+        stop_m = [round(p, 1) for p, _ in placed] + [round(L, 1)]
+        toward = [STOPS[seq[k + 1]][0] for k in range(len(seq) - 1)]
     return {**r, "stops": stops, "fare": tarifa(r, stops), "sequence": seq, "stop_m": stop_m, "toward": toward,
             "length_m": round(L, 1), "osrm_s": round(L * 0.6 / VEL_COMBI_MS), "path": path}
 
@@ -227,7 +247,7 @@ def main():
     for r in ROUTES:
         o = build_kml_route(r) if r.get("kml") else build_osrm_route(r)
         out_routes.append(o)
-        kind = "circuito (KML)" if r.get("kml") else "ida+vuelta (OSRM)"
+        kind = ("circuito (KML)" if r.get("circuito") else "ida y vuelta (KML)") if r.get("kml") else "ida+vuelta (OSRM)"
         print(f"{r['id']}: {o['length_m']/1000:.1f} km {kind}, {len(o['path'])} puntos, "
               f"{len(o['stops'])} paradas, tarifa ${o['fare']:.2f}")
         for sid, m in zip(o["sequence"], o["stop_m"]):

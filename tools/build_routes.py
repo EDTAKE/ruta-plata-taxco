@@ -1,4 +1,4 @@
-"""Genera data/routes.js con el trazo y las paradas de cada ruta.
+"""Genera data/routes.json con el trazo y las paradas de cada ruta.
 
 Dos tipos de ruta:
 - Confirmadas ("kml"): trazo y paradas salen del KML exportado de Google My Maps (carpeta rutas/).
@@ -275,9 +275,11 @@ def main():
     data = {"generated": time.strftime("%Y-%m-%d"),
             "stops": {k: {"name": v[0], "lat": v[1], "lon": v[2]} for k, v in STOPS.items() if k in used},
             "routes": out_routes}
-    dst = ROOT / "data" / "routes.js"
-    dst.write_text("// Generado por tools/build_routes.py — no editar a mano\nwindow.TAXCO_DATA = "
-                   + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n", encoding="utf-8")
+    dst = ROOT / "data" / "routes.json"   # generado: no editar a mano
+    dst.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    old = ROOT / "data" / "routes.js"
+    if old.exists():
+        old.unlink()                       # formato anterior
     print("OK ->", dst)
     stamp_index()
 
@@ -286,7 +288,7 @@ def stamp_index():
     """Agrega ?v=<huella> a los archivos que carga index.html; cambia sólo si cambia el archivo."""
     idx = ROOT / "index.html"
     html = idx.read_text(encoding="utf-8")
-    for f in ("styles.css", "data/routes.js", "app.js"):
+    for f in ("styles.css", "app.js"):
         v = hashlib.sha1((ROOT / f).read_bytes()).hexdigest()[:8]
         html = re.sub(rf'"{re.escape(f)}(\?v=\w+)?"', f'"{f}?v={v}"', html)
     idx.write_text(html, encoding="utf-8")

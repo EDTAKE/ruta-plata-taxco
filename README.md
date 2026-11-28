@@ -35,7 +35,7 @@ arrastrable. El GPS real se usa a cualquier distancia; fuera de Taxco aparece un
 ## Archivos
 
 - `index.html`, `styles.css`, `app.js` — la app (Leaflet 1.9.4 + teselas de OpenStreetMap, sin build).
-- `data/routes.js` — paradas y trazos generados; **no editar a mano**.
+- `data/routes.json` — paradas y trazos generados por `tools/build_routes.py`; **no editar a mano**.
 - `tools/build_routes.py` — define paradas/rutas y obtiene el trazo por calles con OSRM. Edita las
   listas `STOPS` y `ROUTES` y vuelve a correr `python tools/build_routes.py`.
 - `manifest.json`, `icon.svg` — para "Agregar a pantalla de inicio".

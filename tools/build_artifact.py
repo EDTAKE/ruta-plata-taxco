@@ -31,9 +31,7 @@ def main():
         f"<script>\n{app}</script>\n"
     )
     (DIST / "ruta-plata.html").write_text(page, encoding="utf-8")
-    routes_js = (ROOT / "data" / "routes.js").read_text(encoding="utf-8")
-    data = json.loads(routes_js[routes_js.index("=") + 1:].strip().rstrip(";"))
-    (DIST / "data" / "routes.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (DIST / "data" / "routes.json").write_bytes((ROOT / "data" / "routes.json").read_bytes())
     (DIST / "data" / "basemap.json").write_bytes((ROOT / "data" / "basemap.json").read_bytes())
     for f in sorted(DIST.rglob("*.*")):
         print(f"{f.relative_to(ROOT)}  {f.stat().st_size/1024:.0f} KB")

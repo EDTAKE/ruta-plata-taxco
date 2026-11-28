@@ -4,8 +4,9 @@
 (async () => {
 'use strict';
 
-// Local: data/routes.js define TAXCO_DATA. Versión publicada: se lee data/routes.json.
-const DATA = window.TAXCO_DATA || await (await fetch('data/routes.json')).json();
+// Las rutas se leen de data/routes.json. cache: 'no-cache' obliga al navegador a confirmar con el
+// servidor en cada carga, así un celular nunca se queda con rutas viejas después de publicar.
+const DATA = await (await fetch('data/routes.json', { cache: 'no-cache' })).json();
 const TAXCO_CENTER = [18.5585, -99.6045];
 const DEFAULT_ME = [18.5576, -99.6033]; // cerca de Calle Juárez / Zócalo
 const WALK_M_PER_MIN = 70;             // calles empinadas: caminar es lento

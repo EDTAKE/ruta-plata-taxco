@@ -25,7 +25,7 @@ STOPS = {}
 # nombre del punto (Google Maps pone la dirección). Si un punto no está aquí, se usa esa dirección.
 # El id "zocalo" importa: define la tarifa de $11.00.
 NOMBRES_KML = {
-    "Iguala - Taxco 501":         ("sanmiguel",       "Seguro IMSS · Terminal"),
+    "Iguala - Taxco 501":         ("sanmiguel",       "Seguro IMSS"),
     "De Los Plateros 501":        ("plateros-501",    "Telmex"),
     "De Los Plateros 203b":       ("plateros-mora",   "La Terminal"),
     "De Los Plateros 280":        ("plateros-catarina-sur", "Comex"),
@@ -54,6 +54,19 @@ NOMBRES_KML = {
     "20 de Noviembre 21":         ("primaria-20-nov", "Primaria 20 de Noviembre"),
     "Tlachichilpan 10":           ("ojeda-1",         "Ojeda 1"),
     "Del Progreso 25":            ("ojeda-2",         "Ojeda 2"),
+    # Ruta Arcos – Pedro Martín (los ids repetidos son paradas que comparte con la Zocalera)
+    "Nueva Carretera a México 65": ("gasolinera-arcos", "Gasolinera Arcos"),
+    "C. del Chorrillo 95A":       ("teleferico",      "Teleférico"),
+    "Florida 29":                 ("la-florida",      "La Florida"),
+    "Florida 18A1":               ("super-che",       "Super Che"),
+    "De Los Plateros s/n":        ("minero",          "La Garita"),
+    "Cuernavaca - Taxco 125":     ("plateros-catarina-norte", "La Misión"),
+    "De Los Plateros 171":        ("plateros-fundiciones", "Reforma"),
+    "De Los Plateros 217":        ("sanmiguel",       "Seguro IMSS"),
+    "De Los Plateros 79":         ("estrella-de-oro", "Estrella de Oro"),
+    "Huiyatengo 285":             ("huiyatengo",      "Huiyatengo"),
+    "De Los Plateros 42":         ("pedro-martin",    "Pedro Martín"),
+    "De Los Plateros 333":        ("gasolinera-pedro-martin", "Gasolinera Pedro Martín"),
 }
 
 # Tarifas urbanas confirmadas (nov 2026): $11.00 si la ruta llega al Zócalo, $11.50 cualquier otra
@@ -78,9 +91,9 @@ ROUTES = [
     {"id": "PCB", "name": "Ruta Plazuela – CBTIS", "short": "C", "chip": "CBTIS", "color": "#c026d3",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_plazuela_cbtis.kml", "circuito": True,
      "units": 6},
-    {"id": "APM", "name": "Ruta Arcos PM", "short": "A", "chip": "Arcos PM", "color": "#16a34a",
+    {"id": "APM", "name": "Ruta Arcos – Pedro Martín", "short": "A", "chip": "Arcos – P. Martín", "color": "#16a34a",
      "tipo": "urbana", "confirmada": True, "kml": "rutas/ruta_arcos_pm.kml", "ida_y_vuelta": True,
-     "units": 4, "units_pending": True},
+     "units": 8},
 ]
 
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -188,15 +201,21 @@ def build_kml_route(r):
     for name, lat, lon, i_ini, i_fin in points:
         key = name.split(",")[0].strip()
         sid, label = NOMBRES_KML.get(key, (slug(key), key))
-        STOPS.setdefault(sid, (label, lat, lon))      # una parada compartida conserva su primer punto
-        if haversine(path[0], (lat, lon)) < 30:
-            pos, off = 0.0, haversine(path[0], (lat, lon))   # terminal: inicio del circuito
-        elif ida_vuelta and haversine(path[-1], (lat, lon)) < 30:
-            pos, off = L, haversine(path[-1], (lat, lon))    # terminal del otro extremo
-        else:
-            pos, off = project(path, cum, (lat, lon), i_ini, i_fin)   # sólo sobre su tramo (ida o vuelta)
-            if off > MAX_DIST_PARADA_M:
-                pos, off = project(path, cum, (lat, lon))
+        candidatos = [(lat, lon)]
+        if sid in STOPS and (STOPS[sid][1], STOPS[sid][2]) != (lat, lon):
+            candidatos.insert(0, (STOPS[sid][1], STOPS[sid][2]))   # parada compartida: mismo punto en todas
+        STOPS.setdefault(sid, (label, lat, lon))
+        for clat, clon in candidatos:
+            if haversine(path[0], (clat, clon)) < 30:
+                pos, off = 0.0, haversine(path[0], (clat, clon))   # terminal: inicio del trazo
+            elif ida_vuelta and haversine(path[-1], (clat, clon)) < 30:
+                pos, off = L, haversine(path[-1], (clat, clon))    # terminal del otro extremo
+            else:
+                pos, off = project(path, cum, (clat, clon), i_ini, i_fin)   # sólo sobre su tramo (ida o vuelta)
+                if off > MAX_DIST_PARADA_M:
+                    pos, off = project(path, cum, (clat, clon))
+            if off <= MAX_DIST_PARADA_M:
+                break
         if off > MAX_DIST_PARADA_M:
             raise SystemExit(f"{r['id']}: la parada «{label}» queda a {off:.0f} m del trazo")
         # la misma parada puede servir ida y vuelta (dos pasadas), pero un punto repetido
